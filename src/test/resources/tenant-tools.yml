@@ -1,0 +1,53 @@
+tenants:
+  acme:
+    tools:
+      - name: shop_get_order
+        title: Get an order
+        description: >
+          Get one of the current customer's orders from Acme's shop: status, items, shipping
+          date and expected delivery. Use the order number the customer gives.
+        input_schema:
+          type: object
+          properties:
+            order_number:
+              type: string
+              pattern: "^[0-9]{5,10}$"
+              description: The order number, digits only, for example 48213.
+          required: [order_number]
+          additionalProperties: false
+        call:
+          https: {url: "https://api.acme.example/cc/orders", secret: acme-shop-orders}
+        customer_reference: crm_id
+        result:
+          customer_field: customer_id
+          fields: [order_number, status, items, note_to_customer]
+        profiles: [agent, supervisor]
+        timeout: 2s
+      - name: shop_list_invoices
+        description: List the current customer's invoices from Acme's billing system, newest first.
+        input_schema:
+          type: object
+          properties: {}
+        call:
+          crm: {connector: acme-salesforce, operation: list_invoices}
+        customer_reference: account_number
+        result:
+          customer_field: account
+          fields: [invoice, amount, due]
+        profiles: [supervisor]
+  globex:
+    tools:
+      - name: crm_get_policy
+        description: Get the current customer's insurance policy from Globex's CRM.
+        input_schema:
+          type: object
+          properties:
+            policy_id: {type: string}
+          required: [policy_id]
+        call:
+          crm: {connector: globex-crm, operation: get_policy}
+        customer_reference: crm_id
+        result:
+          customer_field: holder
+          fields: [policy_id, cover, renews]
+        profiles: [agent]

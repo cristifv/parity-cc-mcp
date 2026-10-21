@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: parity-cc-mcp
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+  ai:
+    mcp:
+      server:
+        name: parity-cc-mcp
+        version: 0.1.0
+        # Streamable HTTP without sessions: any instance answers any request.
+        protocol: STATELESS
+        type: SYNC
+        request-timeout: 20s
+        streamable-http:
+          mcp-endpoint: /mcp
+        instructions: >
+          Tools of the contact center. The parity_ tools work on the current customer: the
+          customer of the interaction this session was opened for, on behalf of the agent or
+          supervisor the session acts for. You can't choose another customer. Start with
+          parity_get_customer_context and parity_list_cases. A case is one problem of the
+          customer: open one with parity_open_case only when parity_list_cases shows no case
+          for that problem, and keep it current with parity_update_case. When a decision
+          isn't yours to make, use parity_ask_person. Other tools belong to this tenant and
+          read its own systems for the current customer. Card numbers and IBANs are removed
+          from every result.
+  lifecycle:
+    timeout-per-shutdown-phase: 40s
+
+server:
+  port: 8080
+
+parity-cc-mcp:
+  topics:
+    customer-context-requests: customer.context.requests
+    replies: context.mcp.replies
+    audit: context.mcp.calls
+  owner-timeout: 3s
+  result-character-limit: 25000
+  # The tenants' own tools (YAML, deployed with the service). Empty: none.
+  tenant-tools-file:
+  # Browser origins that may call /mcp. Empty: a request with an Origin header is refused.
+  allowed-origins: []
+  lifecycle:
+    # Empty: host name and process id.
+    instance-id:
+    healthy-file: /tmp/${spring.application.name}.healthy
+    drained-file: /tmp/${spring.application.name}.drained
+    drain-timeout: 30s
+
+logging:
+  level:
+    org.apache.kafka: warn
